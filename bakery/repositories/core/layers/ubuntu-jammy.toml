@@ -1,0 +1,9 @@
+root = true
+
+recipes = [
+    "debian-bootstrap"
+]
+
+[parameters."debian-bootstrap"]
+suite = "jammy"
+mirror = "https://ports.ubuntu.com"
