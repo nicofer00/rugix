@@ -43,7 +43,7 @@ impl Mounted {
         debug!("Mounting {dev:?} to {dst:?}.");
         // FIXME: The `mount` command works without specifying the filesystem type,
         // which is not the case for `nix::mount::mount`.
-        run!(["/usr/bin/mount", dev, dst])
+        run!(["/usr/bin/env", "mount", dev, dst])
             .whatever("unable to mount filesystem")
             .with_info(|_| format!("dev: {dev:?}"))
             .with_info(|_| format!("dst: {dst:?}"))?;
