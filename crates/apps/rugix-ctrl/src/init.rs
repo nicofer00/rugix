@@ -61,6 +61,23 @@ fn init() -> SystemResult<()> {
 
     rugix_cli::CliBuilder::new().init();
 
+    const DEFAULT_PATH: &str = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
+    if let Some(path) = std::env::var("PATH").ok() {
+        let mut paths = path.split(':').collect::<Vec<_>>();
+        for default_path in DEFAULT_PATH.split(':').rev() {
+            if !paths.contains(&default_path) {
+                println!("adding '{}' to PATH", default_path);
+                paths.insert(0, default_path);
+            }
+        }
+        let new_path = paths.join(":");
+        std::env::set_var("PATH", &new_path);
+        println!("PATH='{}'", new_path);
+    } else {
+        std::env::set_var("PATH", DEFAULT_PATH);
+        println!("PATH='{}'", DEFAULT_PATH);
+    }
+
     // Mount essential filesystems.
     mount_essential_filesystems()?;
 
