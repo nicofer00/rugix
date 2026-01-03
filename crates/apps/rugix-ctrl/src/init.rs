@@ -52,15 +52,6 @@ pub fn main() -> SystemResult<()> {
     Ok(())
 }
 
-/// The `cp` executable.
-const CP: &str = "/usr/bin/cp";
-/// The `fsck` executable.
-const FSCK: &str = "/usr/sbin/fsck";
-/// The `mount` executable.
-const MOUNT: &str = "/usr/bin/mount";
-/// The `sync` executable.
-const SYNC: &str = "/usr/bin/sync";
-
 const STATE_PROFILES_DIR: &str = "/run/rugix/mounts/data/state/";
 
 const DEFAULT_STATE_DIR: &str = "/run/rugix/mounts/data/state/default";
@@ -106,7 +97,8 @@ fn init() -> SystemResult<()> {
 
     fs::create_dir_all(MOUNT_POINT_CONFIG).ok();
     run!([
-        MOUNT,
+        "/usr/bin/env",
+        "mount",
         "-o",
         "ro",
         config_partition.path(),
@@ -119,12 +111,24 @@ fn init() -> SystemResult<()> {
         .exists()
     {
         bootstrap(&root)?;
-        run!([MOUNT, "-o", "remount,rw", MOUNT_POINT_CONFIG])
-            .whatever("unable to mount config partition as read-write")?;
+        run!([
+            "/usr/bin/env",
+            "mount",
+            "-o",
+            "remount,rw",
+            MOUNT_POINT_CONFIG
+        ])
+        .whatever("unable to mount config partition as read-write")?;
         std::fs::remove_file(Path::new(MOUNT_POINT_CONFIG).join(".rugix/bootstrap"))
             .whatever("unable to remove bootstrap marker")?;
-        run!([MOUNT, "-o", "remount,ro", MOUNT_POINT_CONFIG])
-            .whatever("unable to mount config partition as readonly")?;
+        run!([
+            "/usr/bin/env",
+            "mount",
+            "-o",
+            "remount,ro",
+            MOUNT_POINT_CONFIG
+        ])
+        .whatever("unable to mount config partition as readonly")?;
         info!("Done bootstrapping")
     }
 
@@ -158,11 +162,12 @@ fn init() -> SystemResult<()> {
         }
     } else if let Some(data_partition) = data_partition {
         // 3️⃣ Check and mount the data partition.
-        if let Err(error) = run!([FSCK, "-p", data_partition.path()]) {
+        if let Err(error) = run!(["/usr/bin/env", "fsck", "-p", data_partition.path()]) {
             println!("fsck reported: {error}")
         }
         if let Err(error) = run!([
-            MOUNT,
+            "/usr/bin/env",
+            "mount",
             "-o",
             "noatime",
             data_partition.path(),
@@ -187,8 +192,15 @@ fn init() -> SystemResult<()> {
     if !matches!(state_config.overlay, Some(OverlayConfig::Disabled)) {
         // 4️⃣ Setup remaining mount points in `/run/rugix/mounts`.
         fs::create_dir_all(MOUNT_POINT_SYSTEM).ok();
-        run!([MOUNT, "-o", "ro", system_device.path(), MOUNT_POINT_SYSTEM])
-            .whatever("unable to mount system partition")?;
+        run!([
+            "/usr/bin/env",
+            "mount",
+            "-o",
+            "ro",
+            system_device.path(),
+            MOUNT_POINT_SYSTEM
+        ])
+        .whatever("unable to mount system partition")?;
     }
 
     let system = System::initialize()?;
@@ -230,7 +242,7 @@ fn init() -> SystemResult<()> {
     }
     fs::create_dir_all(state_profile).ok();
     fs::create_dir_all(STATE_DIR).ok();
-    run!([MOUNT, "--bind", &state_profile, STATE_DIR])
+    run!(["/usr/bin/env", "mount", "--bind", &state_profile, STATE_DIR])
         .whatever("unable to bind mount state profile")?;
 
     // 7️⃣ Setup the root filesystem overlay.
@@ -376,7 +388,7 @@ fn bootstrap(root: &SystemRoot) -> SystemResult<()> {
 /// Mounts the essential filesystems `/proc`, `/sys`, and `/run`.
 fn mount_essential_filesystems() -> SystemResult<()> {
     if !is_mount_point("/proc") {
-        if let Err(error) = run!([MOUNT, "-t", "proc", "proc", "/proc"]) {
+        if let Err(error) = run!(["/usr/bin/env", "mount", "-t", "proc", "proc", "/proc"]) {
             eprintln!(
                 "{:?}",
                 error.whatever::<SystemError, _>("error mounting /proc"),
@@ -386,14 +398,14 @@ fn mount_essential_filesystems() -> SystemResult<()> {
         debug!("skip mounting of `/proc`: already mounted")
     }
     if !is_mount_point("/sys") {
-        if let Err(error) = run!([MOUNT, "-t", "sysfs", "sys", "/sys"]) {
+        if let Err(error) = run!(["/usr/bin/env", "mount", "-t", "sysfs", "sys", "/sys"]) {
             eprintln!("'/sys' appears to be already mounted: {error}");
         }
     } else {
         debug!("skip mounting of `/sys`: already mounted")
     }
     if !is_mount_point("/run") {
-        if let Err(error) = run!([MOUNT, "-t", "tmpfs", "tmp", "/run"]) {
+        if let Err(error) = run!(["/usr/bin/env", "mount", "-t", "tmpfs", "tmp", "/run"]) {
             eprintln!(
                 "{:?}",
                 error.whatever::<SystemError, _>("error mounting /tmp"),
@@ -419,7 +431,7 @@ fn bootstrap_partitions(
         new_table
             .write(root.device.path())
             .whatever("unable to write new partition table")?;
-        run!([SYNC]).whatever("unable to synchronize file systems")?;
+        run!(["/usr/bin/env", "sync"]).whatever("unable to synchronize file systems")?;
         // Inform the kernel about new partitions.
         update_kernel_partitions(root.device.path(), &old_table, &new_table)
             .whatever("unable to update partitions in the kernel")?;
@@ -479,7 +491,8 @@ fn setup_root_overlay(
 
     let upper = upper.to_string_lossy();
     run!([
-        MOUNT,
+        "/usr/bin/env",
+        "mount",
         "-t",
         "overlay",
         "overlay",
@@ -489,8 +502,14 @@ fn setup_root_overlay(
     ])
     .whatever("unable to setup system overlay mounts")?;
     let overlay_root_dir = Path::new(overlay_root_dir);
-    run!([MOUNT, "--rbind", "/run", overlay_root_dir.join("run")])
-        .whatever("unable to rbind /run")?;
+    run!([
+        "/usr/bin/env",
+        "mount",
+        "--rbind",
+        "/run",
+        overlay_root_dir.join("run")
+    ])
+    .whatever("unable to rbind /run")?;
     Ok(overlay_root_dir.to_path_buf())
 }
 
@@ -527,7 +546,7 @@ fn setup_persistent_state(
                     fs::remove_dir_all(&state_path).ok();
                     create_parent_dir(&state_path).ok();
                     if system_path.is_dir() {
-                        run!([CP, "-a", &system_path, &state_path])
+                        run!(["/usr/bin/env", "cp", "-a", &system_path, &state_path])
                             .whatever("unable to copy system files from root partition to state")?;
                     } else {
                         fs::create_dir_all(&state_path).ok();
@@ -537,7 +556,7 @@ fn setup_persistent_state(
                     fs::create_dir_all(&system_path)
                         .whatever("unable to create system directory")?;
                 }
-                run!([MOUNT, "--bind", &state_path, &system_path])
+                run!(["/usr/bin/env", "mount", "--bind", &state_path, &system_path])
                     .whatever("unable to bind-mount persistent directory")?;
             }
             PersistConfig::File(PersistFileConfig { file, default }) => {
@@ -556,7 +575,7 @@ fn setup_persistent_state(
                     create_parent_dir(&state_path)
                         .whatever("unable to create parent directory of persistent file")?;
                     if system_path.is_file() {
-                        run!([CP, "-a", &system_path, &state_path])
+                        run!(["/usr/bin/env", "cp", "-a", &system_path, &state_path])
                             .whatever("unable to copy persistent file from system")?;
                     } else {
                         fs::write(&state_path, default.as_deref().unwrap_or_default())
@@ -568,7 +587,7 @@ fn setup_persistent_state(
                         .whatever("unable to create system parent directory")?;
                     fs::write(&system_path, "").whatever("unable to initialize file")?;
                 }
-                run!([MOUNT, "--bind", &state_path, &system_path])
+                run!(["/usr/bin/env", "mount", "--bind", &state_path, &system_path])
                     .whatever("unable to bind mount file")?;
             }
         }

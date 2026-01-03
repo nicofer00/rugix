@@ -13,12 +13,10 @@ use super::{mbr, DiskId, NumBlocks, Partition, PartitionTable, PartitionType};
 use crate::partitions::DiskError;
 use crate::utils::units::NumBytes;
 
-/// Path to the `sfdisk` executable.
-const SFDISK: &str = "/usr/sbin/sfdisk";
-
 pub(crate) fn sfdisk_read(dev: &Path) -> Result<PartitionTable, Report<DiskError>> {
     let json_table = serde_json::from_str::<SfdiskJson>(
-        &read_str!([SFDISK, "--dump", "--json", dev]).whatever("unable to read partition table")?,
+        &read_str!(["/usr/bin/env", "sfdisk", "--dump", "--json", dev])
+            .whatever("unable to read partition table")?,
     )
     .whatever("unable to parse partition table")?
     .partition_table;
@@ -134,7 +132,7 @@ pub(crate) fn sfdisk_write(table: &PartitionTable, dev: &Path) -> Result<(), Rep
 
     println!("{script}");
 
-    run!([SFDISK, "--no-reread", dev].with_stdin(script))
+    run!(["/usr/bin/env", "sfdisk", "--no-reread", dev].with_stdin(script))
         .whatever("unable to write partition table")?;
     Ok(())
 }
