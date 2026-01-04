@@ -4,6 +4,8 @@
   packages = with pkgs; [
     git
     just
+
+    cargo-deny
   ] ++ [
     inputs.sidex.packages.${stdenv.hostPlatform.system}.default
   ];
