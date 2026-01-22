@@ -258,6 +258,9 @@ jobs:
   build_bakery_image:
     name: Build and Push Bakery Image
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     needs:
       - bakery_metadata
       - build_bakery_images
