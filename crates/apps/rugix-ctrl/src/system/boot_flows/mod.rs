@@ -151,12 +151,8 @@ fn rugix_boot_flow(boot_entries: &BootGroups) -> BootFlowResult<RugixBootFlow> {
     let Some((entry_b_idx, entry_b)) = entries.next() else {
         bail!("invalid number of entries");
     };
-    let Some(boot_a) = entry_a.get_slot("boot") else {
-        bail!("unable to get A boot slot");
-    };
-    let Some(boot_b) = entry_b.get_slot("boot") else {
-        bail!("unable to get B boot slot");
-    };
+    let boot_a = entry_a.get_slot("boot");
+    let boot_b = entry_b.get_slot("boot");
     let Some(system_a) = entry_a.get_slot("system") else {
         bail!("unable to get A system slot");
     };
@@ -177,8 +173,8 @@ fn rugix_boot_flow(boot_entries: &BootGroups) -> BootFlowResult<RugixBootFlow> {
 struct RugixBootFlow {
     entry_a: BootGroupIdx,
     entry_b: BootGroupIdx,
-    boot_a: SlotIdx,
-    boot_b: SlotIdx,
+    boot_a: Option<SlotIdx>,
+    boot_b: Option<SlotIdx>,
     system_a: SlotIdx,
     system_b: SlotIdx,
 }
@@ -408,12 +404,15 @@ fn tryboot_uboot_post_install(
 ) -> BootFlowResult<()> {
     let temp_dir_spare = tempdir().whatever("unable to create temporary directory")?;
     let temp_dir_spare = temp_dir_spare.path();
-    let (boot_slot, system_slot) = if entry == inner.entry_a {
+    let (Some(boot_slot), system_slot) = (if entry == inner.entry_a {
         (inner.boot_a, inner.system_a)
     } else if entry == inner.entry_b {
         (inner.boot_b, inner.system_b)
     } else {
         bail!("unknown entry");
+    }) else {
+        // Boot slot is not defined; nothing to do.
+        return Ok(());
     };
     let boot_slot = &system.slots()[boot_slot];
     let _system_slot = &system.slots()[system_slot];
@@ -513,12 +512,15 @@ impl BootFlow for GrubEfi {
     fn post_install(&self, system: &System, entry: BootGroupIdx) -> BootFlowResult<()> {
         let temp_dir_spare = tempdir().whatever("unable to create temporary directory")?;
         let temp_dir_spare = temp_dir_spare.path();
-        let (boot_slot, system_slot) = if entry == self.inner.entry_a {
+        let (Some(boot_slot), system_slot) = (if entry == self.inner.entry_a {
             (self.inner.boot_a, self.inner.system_a)
         } else if entry == self.inner.entry_b {
             (self.inner.boot_b, self.inner.system_b)
         } else {
             bail!("unknown entry");
+        }) else {
+            // Boot slot is not defined; nothing to do.
+            return Ok(());
         };
         let boot_slot = &system.slots()[boot_slot];
         let _system_slot = &system.slots()[system_slot];
