@@ -348,14 +348,21 @@ struct Uboot {
 
 impl BootFlow for Uboot {
     fn set_try_next(&self, system: &System, entry: BootGroupIdx) -> BootFlowResult<()> {
-        let mut boot_env = hashbrown::HashMap::new();
-        if entry != self.get_default(system)? {
-            boot_env.insert("rugix_boot_spare".to_owned(), "1".to_owned());
-        } else {
-            boot_env.insert("rugix_boot_spare".to_owned(), "0".to_owned());
-        }
-        set_vars(&boot_env)?;
-        Ok(())
+        let config_partition = system
+            .require_config_partition()
+            .whatever("unable to get config partition")?;
+        config_partition
+            .ensure_writable(|| {
+                let mut boot_env = hashbrown::HashMap::new();
+                if entry != self.get_default(system)? {
+                    boot_env.insert("rugix_boot_spare".to_owned(), "1".to_owned());
+                } else {
+                    boot_env.insert("rugix_boot_spare".to_owned(), "0".to_owned());
+                }
+                set_vars(&boot_env)?;
+                Ok(())
+            })
+            .whatever("unable to make config partition writable")?
     }
 
     fn commit(&self, system: &System) -> BootFlowResult<()> {
