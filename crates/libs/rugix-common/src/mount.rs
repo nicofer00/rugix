@@ -93,12 +93,43 @@ impl Mounted {
         .with_info(|_| format!("dst: {dst:?}"))?;
         Ok(Mounted { path: dst.into() })
     }
+
+    pub fn bind_recursive(
+        src: impl AsRef<Path>,
+        dst: impl AsRef<Path>,
+    ) -> Result<Self, Report<MountError>> {
+        let dst = dst.as_ref();
+        let src = src.as_ref();
+        debug!("Mounting {src:?} to {dst:?}.");
+        nix::mount::mount(
+            Some(src),
+            dst,
+            None as Option<&OsStr>,
+            nix::mount::MsFlags::MS_BIND | nix::mount::MsFlags::MS_REC,
+            None as Option<&OsStr>,
+        )
+        .whatever("unable to bind mount")
+        .with_info(|_| format!("src: {src:?}"))
+        .with_info(|_| format!("dst: {dst:?}"))?;
+        Ok(Mounted { path: dst.into() })
+    }
 }
 
 impl Drop for Mounted {
     fn drop(&mut self) {
+        // Try normal unmount first
         if let Err(error) = nix::mount::umount(&self.path) {
-            eprintln!("Error unmounting {:?}: {:?}", self.path, error)
+            // If EBUSY, try lazy unmount (MNT_DETACH) to avoid mount accumulation
+            if error == nix::errno::Errno::EBUSY {
+                eprintln!("Mount {:?} is busy, trying lazy unmount", self.path);
+                if let Err(error) =
+                    nix::mount::umount2(&self.path, nix::mount::MntFlags::MNT_DETACH)
+                {
+                    eprintln!("Error lazy unmounting {:?}: {:?}", self.path, error)
+                }
+            } else {
+                eprintln!("Error unmounting {:?}: {:?}", self.path, error)
+            }
         }
     }
 }
