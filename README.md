@@ -53,6 +53,10 @@ Robust over-the-air updates require system images built to support atomic update
 
 Rugix empowers teams to **ship robust products fast and without compromising on best practices** like read-only root filesystems, atomic OTA updates, and reproducible builds.
 
+## Commercial Support
+
+Rugix has been created and is maintained by [Silitics](https://silitics.com). Looking for commercial support for Rugix or your embedded Linux project? [We're here to help.](https://rugix.org/commercial-support) Need a fleet management solution? Check out [Nexigon](https://nexigon.cloud), by the creators of Rugix.
+
 ## ⚖️ Licensing
 
 This project is licensed under either [MIT](https://github.com/rugix/rugix/blob/main/LICENSE-MIT) or [Apache 2.0](https://github.com/rugix/rugix/blob/main/LICENSE-APACHE) at your option.
