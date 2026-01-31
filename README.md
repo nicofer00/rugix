@@ -5,7 +5,7 @@
     Rugix
 </h1>
 <h4 align="center">
-    Robust Over-the-Air Updates for Embedded Linux
+    Robust and Secure Over-the-Air Updates for Embedded Linux
 </h4>
 <p align="center">
   <a href="https://github.com/rugix/rugix/releases"><img alt="Rugix Version Badge" src="https://img.shields.io/github/v/tag/rugix/rugix?label=version"></a>
