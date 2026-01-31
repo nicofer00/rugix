@@ -55,7 +55,7 @@ Rugix empowers teams to **ship robust products fast and without compromising on 
 
 ## Commercial Support
 
-Rugix has been created and is maintained by [Silitics](https://silitics.com). Looking for commercial support for Rugix or your embedded Linux project? [We're here to help.](https://rugix.org/commercial-support) Need a fleet management solution? Check out [Nexigon](https://nexigon.cloud), by the creators of Rugix.
+Rugix has been created and is maintained by [Silitics](https://silitics.com). Looking for commercial support? [We're here to help.](https://rugix.org/commercial-support) Need a fleet management solution? Check out [Nexigon](https://nexigon.cloud), by the creators of Rugix.
 
 ## ⚖️ Licensing
 
