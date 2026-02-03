@@ -15,7 +15,7 @@ use crate::utils::units::NumBytes;
 
 pub(crate) fn sfdisk_read(dev: &Path) -> Result<PartitionTable, Report<DiskError>> {
     let json_table = serde_json::from_str::<SfdiskJson>(
-        &read_str!(["/usr/bin/env", "sfdisk", "--dump", "--json", dev])
+        &read_str!(["sfdisk", "--dump", "--json", dev])
             .whatever("unable to read partition table")?,
     )
     .whatever("unable to parse partition table")?
@@ -132,7 +132,7 @@ pub(crate) fn sfdisk_write(table: &PartitionTable, dev: &Path) -> Result<(), Rep
 
     println!("{script}");
 
-    run!(["/usr/bin/env", "sfdisk", "--no-reread", dev].with_stdin(script))
+    run!(["sfdisk", "--no-reread", dev].with_stdin(script))
         .whatever("unable to write partition table")?;
     Ok(())
 }
