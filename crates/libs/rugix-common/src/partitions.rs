@@ -29,7 +29,7 @@ pub fn get_disk_id(path: impl AsRef<Path>) -> Result<String, Report<DiskError>> 
 /// Formats a boot partition with FAT32.
 pub fn mkfs_vfat(dev: impl AsRef<Path>, label: impl AsRef<str>) -> Result<(), Report<DiskError>> {
     run!(["mkfs.vfat", "-n", label.as_ref(), dev.as_ref()])
-    .whatever("unable to create FAT32 filesystem")?;
+        .whatever("unable to create FAT32 filesystem")?;
     Ok(())
 }
 
